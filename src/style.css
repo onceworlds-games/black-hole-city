@@ -61,10 +61,28 @@ canvas {
   display: none !important;
 }
 
+/* an outline made of shadows (it works everywhere and never eats into the letters), and a soft drop below */
 .ink {
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55), 0 0 14px rgba(0, 0, 0, 0.5);
-  -webkit-text-stroke: 3px rgba(6, 9, 18, 0.7);
-  paint-order: stroke fill;
+  --edge: rgba(6, 9, 18, 0.92);
+  text-shadow:
+    calc(var(--o, 2px) * -1) calc(var(--o, 2px) * -1) 0 var(--edge),
+    var(--o, 2px) calc(var(--o, 2px) * -1) 0 var(--edge),
+    calc(var(--o, 2px) * -1) var(--o, 2px) 0 var(--edge),
+    var(--o, 2px) var(--o, 2px) 0 var(--edge),
+    0 calc(var(--o, 2px) * -1) 0 var(--edge),
+    0 var(--o, 2px) 0 var(--edge),
+    calc(var(--o, 2px) * -1) 0 0 var(--edge),
+    var(--o, 2px) 0 0 var(--edge),
+    0 calc(var(--o, 2px) * 2) 10px rgba(0, 0, 0, 0.45);
+}
+
+.logo,
+.banner,
+.callout,
+.dead,
+.count,
+.results h1 {
+  --o: 4px;
 }
 
 /* ------------------------------------------------------------------------------------------------ title */
@@ -108,7 +126,6 @@ canvas {
   background: radial-gradient(circle at 50% 50%, #000 0 52%, #04060d 62%, #1a2540 100%);
   box-shadow: 0 0 0 0.065em var(--accent), 0 0 0.35em 0.07em rgba(25, 211, 255, 0.55), inset 0 0 0.25em 0.05em #000;
   vertical-align: baseline;
-  -webkit-text-stroke: 0;
 }
 
 .play {
