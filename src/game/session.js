@@ -404,7 +404,7 @@ export class Session {
     const { ids, by } = sim.drainAte();
     for (let k = 0; k < ids.length; k++) {
       const v = this.views[by[k]];
-      if (v) this.emit('fall', { id: ids[k], hx: v.x, hz: v.z });
+      if (v) this.emit('fall', { id: ids[k], hx: v.x, hz: v.z, seat: v.idx });
     }
     sim.drainKills();
     void ctx;
@@ -858,7 +858,7 @@ export class Session {
         }
       }
     }
-    if (target) this.emit('fall', { id, hx: target.x, hz: target.z });
+    if (target) this.emit('fall', { id, hx: target.x, hz: target.z, seat: target.idx });
     else this.emit('vanish', { id });
   }
 

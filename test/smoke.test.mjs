@@ -80,14 +80,13 @@ test('the whole page: title, play, lobby, countdown, a round, the podium, back t
   // title
   run(500);
   assert.ok(visible('title'), 'the title shows first');
-  assert.ok(!visible('lobbybar') && !visible('clock'));
+  assert.ok(!visible('lobbytop') && !visible('clock'));
   assert.ok(ui.find('play').length >= 1, 'a Play button');
   // Play (a click on the button)
   ui.find('play')[0].dispatch('click');
   run(300);
   assert.ok(!visible('title'));
-  assert.ok(visible('lobbybar'), 'the lobby shows its settings');
-  assert.ok(visible('hint'));
+  assert.ok(visible('lobbytop'), 'the lobby shows its settings');
   assert.equal(controlsLog[controlsLog.length - 1]?.stick, 'analog', 'touch controls are asked for in the lobby');
   assert.ok(ui.find('opt').length === 5, 'time and rounds options');
   // the host taps a setting
@@ -134,7 +133,7 @@ test('the whole page: title, play, lobby, countdown, a round, the podium, back t
   run(10000, () => hub.ended.length > 0);
   assert.equal(hub.ended.length, 1, 'the host ended the match');
   run(300);
-  assert.ok(visible('lobbybar'), 'the lobby is back');
+  assert.ok(visible('lobbytop'), 'the lobby is back');
   assert.ok(visible('results'), 'with the results still on it');
   run(8000);
   assert.ok(!visible('results'), 'which go away after a while');

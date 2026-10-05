@@ -108,7 +108,8 @@ export class UI {
     this.count.append(this.countN);
 
     // lobby
-    this.lobby = el('div', 'lobbybar');
+    this.lobby = el('div', 'lobbytop');
+    this.lobbyBar = el('div', 'lobbybar');
     this.settingUI = SETTINGS.map((def) => {
       const group = el('div', 'group');
       const lab = el('span', 'lab ink', def.label);
@@ -129,10 +130,11 @@ export class UI {
         return { b, value: o.value };
       });
       group.append(lab, val, opts);
-      this.lobby.append(group);
+      this.lobbyBar.append(group);
       return { def, group, val, opts, buttons, shown: '' };
     });
     this.hint = el('div', 'hint ink', 'SWALLOW THINGS SMALLER THAN YOU');
+    this.lobby.append(this.lobbyBar, this.hint);
 
     // between rounds and the end
     this.card = el('div', 'card');
@@ -151,8 +153,8 @@ export class UI {
     this.msgBtn.type = 'button';
     this.msg.append(this.msgText, this.msgBtn);
 
-    root.append(this.title, this.clock, this.side, this.feedEl, this.stage, this.dead, this.count, this.lobby, this.hint, this.card, this.results, this.watch, this.msg);
-    for (const n of [this.title, this.clock, this.side, this.dead, this.count, this.lobby, this.hint, this.card, this.results, this.watch, this.msg]) n.hidden = true;
+    root.append(this.title, this.clock, this.side, this.feedEl, this.stage, this.dead, this.count, this.lobby, this.card, this.results, this.watch, this.msg);
+    for (const n of [this.title, this.clock, this.side, this.dead, this.count, this.lobby, this.card, this.results, this.watch, this.msg]) n.hidden = true;
     this.banner.hidden = true;
     this.callEl.hidden = true;
   }
@@ -245,7 +247,6 @@ export class UI {
 
     show(this.title, title);
     show(this.lobby, lobby);
-    show(this.hint, lobby);
     if (lobby) this.updateLobby();
 
     this.updateCount(countdown, round, sub);

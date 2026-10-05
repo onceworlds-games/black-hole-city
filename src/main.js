@@ -145,7 +145,7 @@ async function boot() {
     session.on('eat', (e) => {
       const city = session.ctx.city;
       const r2 = city.r[e.id];
-      stage.city.fall(e.id, e.hx, e.hz);
+      stage.city.fall(e.id, e.hx, e.hz, session.views.findIndex((v) => v.me));
       sound.plop(r2);
       overlay.gain(e.value, e.hx, e.hz, e.value >= 40);
       const power = Math.min(2.6, 0.5 + r2 * 0.35);
@@ -161,7 +161,7 @@ async function boot() {
       if (!e.practice && e.count >= 500) profile.award('whole-city');
     });
     session.on('fall', (e) => {
-      stage.city.fall(e.id, e.hx, e.hz);
+      stage.city.fall(e.id, e.hx, e.hz, e.seat);
       const city = session.ctx?.city;
       const me = session.views[session.seat];
       if (!city || !me) return;

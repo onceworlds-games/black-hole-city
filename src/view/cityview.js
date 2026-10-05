@@ -2,7 +2,7 @@
 // walkers and traffic moving, things tipping over a hole's edge, falling in, popping back.
 // It reads the city (pure data) and never decides anything; the session tells it what was eaten.
 
-import { Group, Mesh, InstancedMesh, Matrix4, Quaternion, Vector3, MeshStandardMaterial, DynamicDrawUsage } from 'three';
+import { Group, Mesh, InstancedMesh, Matrix4, Quaternion, Vector3, Color, MeshStandardMaterial, DynamicDrawUsage } from 'three';
 import { buildModels } from './models.js';
 import { facadeTexture } from './textures.js';
 import { buildGround, makeGroundMaterial } from './ground.js';
@@ -23,6 +23,8 @@ const _qy = new Quaternion();
 const _qt = new Quaternion();
 const _q = new Quaternion();
 const Y = new Vector3(0, 1, 0);
+const WHITE = new Color(1, 1, 1);
+const _c = new Color();
 
 const smooth = (a, b, x) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
@@ -48,6 +50,7 @@ export class CityView {
     this.slot = new Int32Array(0);
     this.state = new Uint8Array(0);
     this.dirty = new Uint8Array(TYPE_COUNT);
+    this.tintDirty = new Uint8Array(TYPE_COUNT);
     this.falls = [];
     this.pops = new Map();
     this.tilts = new Map();
@@ -74,6 +77,7 @@ export class CityView {
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       mesh.frustumCulled = false;
+      for (let i = 0; i < counts[t]; i++) mesh.setColorAt(i, WHITE); // per-object tint: things darken as they sink into the pit
       this.group.add(mesh);
       this.meshes[t] = mesh;
     }
@@ -83,6 +87,7 @@ export class CityView {
     this.group.add(this.ground);
     for (let i = 0; i < n; i++) this.place(i, 0);
     this.dirty.fill(1);
+    this.tintDirty.fill(1);
     this.flush();
   }
 
@@ -162,12 +167,25 @@ export class CityView {
     this.put(id);
   }
 
+  /** How bright an object is drawn: 1 normally, darker as it sinks. */
+  tint(id, k) {
+    const type = this.city.type[id];
+    _c.setScalar(k);
+    this.meshes[type].setColorAt(this.slot[id], _c);
+    this.tintDirty[type] = 1;
+  }
+
   flush() {
     for (let t = 0; t < TYPE_COUNT; t++) {
-      if (!this.dirty[t]) continue;
-      this.dirty[t] = 0;
       const mesh = this.meshes[t];
-      if (mesh) mesh.instanceMatrix.needsUpdate = true;
+      if (this.dirty[t]) {
+        this.dirty[t] = 0;
+        if (mesh) mesh.instanceMatrix.needsUpdate = true;
+      }
+      if (this.tintDirty[t]) {
+        this.tintDirty[t] = 0;
+        if (mesh && mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      }
     }
   }
 
@@ -184,8 +202,11 @@ export class CityView {
     this.hide(id);
   }
 
-  /** An object falls into the hole at (hx, hz): it slides to the middle, tips and sinks out of sight. */
-  fall(id, hx, hz) {
+  /**
+   * An object falls into the hole at (hx, hz): it slides to the middle, tips and sinks out of sight. `seat` is the hole's
+   * place in the `holes` list given to update(): the object follows that hole while it moves on.
+   */
+  fall(id, hx, hz, seat = -1) {
     const city = this.city;
     if (!city || id < 0 || id >= city.n) return;
     if (this.state[id] === HIDDEN || this.state[id] === FALLING) return;
@@ -223,6 +244,7 @@ export class CityView {
       r: city.r[id],
       tilt0: tl ? tl.a * 0.5 : 0,
       spin,
+      seat,
     });
   }
 
@@ -249,6 +271,7 @@ export class CityView {
     if (this.state[id] === FALLING) this.removeFall(id);
     this.state[id] = POPPING;
     this.pops.set(id, 0);
+    this.tint(id, 1);
     this.place(id, this.time);
   }
 
@@ -262,17 +285,25 @@ export class CityView {
     f.t = -1e9;
   }
 
-  writeFall(f) {
+  writeFall(f, holes) {
     const p = f.t / f.dur;
     const s = smooth(0, 0.42, p);
-    const x = f.x0 + (f.hx - f.x0) * s;
-    const z = f.z0 + (f.hz - f.z0) * s;
+    let hx = f.hx;
+    let hz = f.hz;
+    const h = f.seat >= 0 && holes ? holes[f.seat] : null;
+    if (h && h.shown !== false && Number.isFinite(h.x) && Number.isFinite(h.z)) {
+      hx = h.x;
+      hz = h.z;
+    }
+    const x = f.x0 + (hx - f.x0) * s;
+    const z = f.z0 + (hz - f.z0) * s;
     const sink = p < 0.12 ? 0 : Math.pow((p - 0.12) / 0.88, 1.8);
     const y = -sink * (f.h + 1.6);
     const tilt = Math.max(f.tilt0, 0.95 * smooth(0, 0.6, p));
     const sc = 1 - 0.1 * smooth(0.3, 1, p);
     this.compose(x, y, z, f.yaw + f.spin * p, tilt, f.dx, f.dz, sc);
     this.put(f.id);
+    this.tint(f.id, 1 - 0.88 * smooth(0.1, 0.85, p));
   }
 
   // ------------------------------------------------------------------------------------------------ every frame
@@ -297,7 +328,7 @@ export class CityView {
       if (f.t < -1e8) continue;
       f.t += dt;
       if (f.t >= f.dur) this.finishFall(i);
-      else this.writeFall(f);
+      else this.writeFall(f, holes);
     }
     // pop-ins
     if (this.pops.size > 0) {
