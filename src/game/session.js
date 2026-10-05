@@ -906,7 +906,7 @@ export class Session {
       if (nowOw - last < 900) continue;
       me.gulpAsked.set(v.id, nowOw);
       if (hostSim) this.host.gulpFor(v.id);
-      else this.room.send({ t: 'gulp', rid: ctx.rid, v: v.id }, { to: this.room.host });
+      else if (this.room.host) this.room.send({ t: 'gulp', rid: ctx.rid, v: v.id }, { to: this.room.host });
     }
   }
 
@@ -930,6 +930,7 @@ export class Session {
     const ctx = this.ctx;
     const g = this.g;
     if (!g || g.rid !== ctx.rid || g.phase !== 'play') return; // wait for the host's record
+    if (!hostSim && !this.room.host) return; // nobody to tell yet
     this.lastClaim = nowOw;
     const ids = this.claimQueue.splice(0, C.CLAIM_MAX_IDS);
     if (hostSim) {

@@ -82,6 +82,7 @@ async function boot() {
     const pr = ow.settings?.pixelRatio?.(2) ?? Math.min(devicePixelRatio || 1, 2);
     stage.setQuality(ow.settings?.quality ?? 'high');
     stage.reduced = !!ow.settings?.reducedMotion;
+    if (stage.reduced) stage.particles.setBudget(Math.min(stage.particles.budget, 160)); // gentler
     overlay.reduced = stage.reduced;
     if (ui) ui.reduced = stage.reduced;
     stage.resize(innerWidth, innerHeight, pr);
@@ -156,7 +157,7 @@ async function boot() {
       else if (r2 >= 1.7) stage.addTrauma(0.07);
       if (e.skyscraper) {
         if (!e.practice) profile.award('skyscraper');
-        state.hitstop = 0.07;
+        if (!stage.reduced) state.hitstop = 0.07;
       }
       if (!e.practice && e.count >= 500) profile.award('whole-city');
     });

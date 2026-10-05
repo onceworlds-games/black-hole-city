@@ -105,6 +105,23 @@ export class Hub {
     }
   }
 
+  /** Too few players are connected: the match waits and its clock stands still. */
+  pause() {
+    if (this.match.phase !== 'playing' || this.match.paused) return;
+    this.pausedAt = this.t;
+    this.match = { ...this.match, paused: true };
+    this.sync();
+    for (const c of this.clients.values()) c.emit('matchpause', this.match);
+  }
+
+  resume() {
+    if (!this.match.paused) return;
+    this.pausedMs += this.t - this.pausedAt;
+    this.match = { ...this.match, paused: false };
+    this.sync();
+    for (const c of this.clients.values()) c.emit('matchresume', this.match);
+  }
+
   sync() {
     for (const c of this.clients.values()) c.match = this.match;
   }
