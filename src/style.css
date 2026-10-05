@@ -731,6 +731,16 @@ canvas {
   pointer-events: auto;
 }
 
+.play.standalone {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  margin-left: -110px;
+  min-width: 220px;
+  height: 64px;
+  font-size: 28px;
+}
+
 .msg .play {
   min-width: 200px;
   height: 64px;

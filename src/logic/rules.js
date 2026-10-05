@@ -56,19 +56,29 @@ export function clampToWorld(h, R, half) {
 /** Smooth step toward a target, independent of the frame rate. */
 export const damp = (current, target, rate, dt) => current + (target - current) * (1 - Math.exp(-rate * dt));
 
+// collectSwallows runs every simulation step: its visitor is made once, not once per call
+const sw = { city: null, eaten: null, x: 0, z: 0, R: 0, out: null };
+const visitSwallow = (id) => {
+  if (sw.eaten[id]) return;
+  const ro = sw.city.r[id];
+  if (sw.R < ro * EAT_RATIO) return;
+  const dx = sw.city.x[id] - sw.x;
+  const dz = sw.city.z[id] - sw.z;
+  const lim = sw.R - ro * EDGE_PULL;
+  if (dx * dx + dz * dz <= lim * lim) sw.out.push(id);
+};
+
 /** The ids of every object this hole swallows right now (written into `out`). */
 export function collectSwallows(city, grid, eaten, x, z, R, out) {
   out.length = 0;
+  sw.city = city;
+  sw.eaten = eaten;
+  sw.x = x;
+  sw.z = z;
+  sw.R = R;
+  sw.out = out;
+  grid.query(x, z, R, visitSwallow);
   const { r } = city;
-  grid.query(x, z, R, (id) => {
-    if (eaten[id]) return;
-    const ro = r[id];
-    if (R < ro * EAT_RATIO) return;
-    const dx = city.x[id] - x;
-    const dz = city.z[id] - z;
-    const lim = R - ro * EDGE_PULL;
-    if (dx * dx + dz * dz <= lim * lim) out.push(id);
-  });
   const movers = city.moverIds;
   for (let k = 0; k < movers.length; k++) {
     const id = movers[k];

@@ -41,7 +41,7 @@ export class Overlay {
     this.time = 0;
     this.reduced = false;
     this.pt = { x: 0, y: 0 };
-    this.tmp = { x: 0, y: 0 };
+    this.list = [];
   }
 
   resize(w, h, pr) {
@@ -124,7 +124,9 @@ export class Overlay {
     const scale = clamp(Math.min(this.w, this.h * 1.6) / 900, 0.78, 1.25);
     if (tags) {
       // far holes first so the near ones sit on top
-      const list = session.views.filter((v) => v.shown);
+      const list = this.list;
+      list.length = 0;
+      for (const v of session.views) if (v.shown) list.push(v);
       list.sort((a, b) => a.z - b.z);
       for (const v of list) this.drawTag(session, stage, v, scale);
     }

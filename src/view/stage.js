@@ -180,8 +180,8 @@ export class Stage {
     let roll = 0;
     if (this.trauma > 0 && !this.reduced) {
       const a = this.trauma * this.trauma;
-      ox = (Math.sin(t * 37.1) + Math.sin(t * 23.7 + 1.7)) * 0.5 * a * d * 0.014;
-      oy = (Math.sin(t * 31.9 + 0.4) + Math.sin(t * 19.3 + 2.9)) * 0.5 * a * d * 0.014;
+      ox = (Math.sin(t * 37.1) + Math.sin(t * 23.7 + 1.7)) * 0.5 * a * d * 0.03;
+      oy = (Math.sin(t * 31.9 + 0.4) + Math.sin(t * 19.3 + 2.9)) * 0.5 * a * d * 0.03;
       roll = Math.sin(t * 27.3 + 0.9) * a * 0.012;
     }
     cam.position.set(this.x + ox, Math.sin(this.pitch) * d + oy, this.z + Math.cos(this.pitch) * d);

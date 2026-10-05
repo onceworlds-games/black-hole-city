@@ -494,9 +494,8 @@ export class Session {
     this.scanHint(nowOw, ctx);
     this.growPulse();
     // everyone who is here: me and the others by their presence in the lobby
-    const players = [...room.players.values()];
     let k = 0;
-    for (const p of players) {
+    for (const p of room.players.values()) {
       if (p.connected === false && p.id !== this.myId) continue;
       const v = this.viewFor(k);
       v.seat = k;
@@ -801,10 +800,10 @@ export class Session {
 
   updateOrder() {
     const views = this.views;
-    const order = [];
+    const order = this.order;
+    order.length = 0;
     if (this.mode === 'round' || this.mode === 'countdown') for (let i = 0; i < views.length; i++) order.push(i);
     order.sort((a, b) => views[b].score - views[a].score || views[b].mass - views[a].mass || a - b);
-    this.order = order;
   }
 
   // ------------------------------------------------------------------------------------------------ the eaten set

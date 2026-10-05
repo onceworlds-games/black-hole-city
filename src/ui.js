@@ -147,14 +147,20 @@ export class UI {
     this.youEl = el('div', 'you ink', '');
     this.results.append(this.resultsH, this.podium, this.youEl);
 
+    // opened on its own (no platform around it, so no Ready strip): one button to start
+    this.readyBtn = el('button', 'play hit standalone');
+    this.readyBtn.type = 'button';
+    this.readyBtn.append(el('span', '', 'READY'));
+    this.readyBtn.addEventListener('click', () => this.room.setReady(true));
+
     this.msg = el('div', 'msg');
     this.msgText = el('div', 'ink', '');
     this.msgBtn = el('button', 'play hit');
     this.msgBtn.type = 'button';
     this.msg.append(this.msgText, this.msgBtn);
 
-    root.append(this.title, this.clock, this.side, this.feedEl, this.stage, this.dead, this.count, this.lobby, this.card, this.results, this.watch, this.msg);
-    for (const n of [this.title, this.clock, this.side, this.dead, this.count, this.lobby, this.card, this.results, this.watch, this.msg]) n.hidden = true;
+    root.append(this.title, this.clock, this.side, this.feedEl, this.stage, this.dead, this.count, this.lobby, this.card, this.results, this.watch, this.readyBtn, this.msg);
+    for (const n of [this.title, this.clock, this.side, this.dead, this.count, this.lobby, this.card, this.results, this.watch, this.readyBtn, this.msg]) n.hidden = true;
     this.banner.hidden = true;
     this.callEl.hidden = true;
   }
@@ -247,6 +253,7 @@ export class UI {
 
     show(this.title, title);
     show(this.lobby, lobby);
+    show(this.readyBtn, lobby && this.ow.mode === 'standalone');
     if (lobby) this.updateLobby();
 
     this.updateCount(countdown, round, sub);
