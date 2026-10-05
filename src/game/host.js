@@ -183,7 +183,11 @@ export class HostController {
     const { room } = this;
     if (!room.isHost || !room.running) return;
     const g = this.G();
-    if (!this.isMine(g)) return;
+    if (!this.isMine(g)) {
+      // the host role came to this page while the match waited (nobody was running it), or the record isn't ours: pick it up
+      this.adopt();
+      return;
+    }
     const now = room.matchNow();
     if (g.phase === 'play') {
       this.ensureSim(g);

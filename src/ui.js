@@ -251,10 +251,10 @@ export class UI {
 
     this.updateCount(countdown, round, sub);
 
-    const playPhase = round && sub === 'play';
-    const hudOn = playPhase || (round && sub === 'score');
+    const g = s.g;
+    const playPhase = round && sub === 'play' && !!g; // the clock waits for the host's first record
     show(this.clock, playPhase);
-    show(this.side, hudOn && sub === 'play');
+    show(this.side, playPhase);
     if (playPhase) this.updateHud();
 
     // swallowed: a countdown to coming back
@@ -264,8 +264,7 @@ export class UI {
     if (dead) setText(this.deadL2, `BACK IN ${Math.max(1, Math.ceil((mine.dead - room.matchNow()) / 1000))}`);
 
     // a new round's words
-    const g = s.g;
-    if (playPhase && g && g.rid && this.bannerRid !== g.rid) {
+    if (playPhase && g.rid && this.bannerRid !== g.rid) {
       this.bannerRid = g.rid;
       if (room.matchNow() - g.t0 < 3000) {
         if (g.rounds > 1) this.showBanner(`ROUND ${g.n}`, 'BIGGEST HOLE WINS');

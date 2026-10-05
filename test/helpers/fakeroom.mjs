@@ -137,6 +137,7 @@ export class FakeRoom {
     this.kind = hub.kind;
     this.connected = true;
     this.sent = 0;
+    this.written = new Map();
     this.match = hub.match;
   }
 
@@ -202,10 +203,15 @@ export class FakeRoom {
   setState(key, value) {
     if (value === null || value === undefined) delete this.state[key];
     else this.state[key] = value;
+    this.written.set(key, this.hub.t);
     const copy = value === null || value === undefined ? null : JSON.parse(JSON.stringify(value));
     for (const other of this.hub.clients.values()) {
       if (other === this) continue;
       this.hub.schedule(() => {
+        // like the real SDK: someone else's write that arrives while one of ours on the same key is on its way is ignored
+        // (the room orders ours after it)
+        const mine = other.written.get(key);
+        if (mine !== undefined && this.hub.t - mine < 3000) return;
         if (copy === null) delete other.state[key];
         else other.state[key] = copy;
         other.emit('state', key, copy, this.me.id);

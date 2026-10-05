@@ -109,6 +109,7 @@ export class Session {
       } catch {}
     });
     room.on('host', () => this.host.adopt());
+    room.on('matchresume', () => this.host.adopt());
     room.on('reconnect', () => this.host.adopt());
     room.on('message', (d, from) => this.host.onMessage(d, from));
     room.on('matchend', () => {
