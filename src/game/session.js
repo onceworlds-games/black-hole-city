@@ -315,7 +315,15 @@ export class Session {
     this.views.length = 0;
     if (this.playing) {
       const spot = ctx.plan[this.seat] ?? ctx.plan[0];
-      this.me = { x: spot.x, z: spot.z, vx: 0, vz: 0, R: C.R0, mass: 0, alive: true, hostMass: 0, pend: new Map(), gulpAsked: new Map(), pulseR: C.R0, deadAt: 0 };
+      let x = spot.x;
+      let z = spot.z;
+      // a page that reloaded in the middle of this round carries on from where the room last saw its hole
+      const p = room.me.presence;
+      if (p && typeof p === 'object' && p.k === ctx.key && Number.isFinite(p.x) && Number.isFinite(p.z)) {
+        x = p.x;
+        z = p.z;
+      }
+      this.me = { x, z, vx: 0, vz: 0, R: C.R0, mass: 0, alive: true, hostMass: 0, pend: new Map(), gulpAsked: new Map(), pulseR: C.R0, deadAt: 0 };
     }
     this.emit('round', { n: ctx.n, rid: ctx.rid, g });
   }
@@ -717,8 +725,10 @@ export class Session {
       } else if (!e.bot) {
         const a = room.presenceAt(e.id, { snap: 6 });
         if (a && a.k === key && Number.isFinite(a.x) && Number.isFinite(a.z)) {
-          v.vx = (a.x - v.x) * 8;
-          v.vz = (a.z - v.z) * 8;
+          if (dt > 0.001) {
+            v.vx += ((a.x - v.x) / dt - v.vx) * 0.15;
+            v.vz += ((a.z - v.z) / dt - v.vz) * 0.15;
+          }
           v.x = a.x;
           v.z = a.z;
         } else if (!v.seen || (a && a.k !== key)) {
@@ -739,7 +749,7 @@ export class Session {
       v.Rt = radiusFor(mass);
       const alive = !v.gone && nowMs >= dead;
       this.settleView(v, dt, alive, false, nowMs);
-      v.protect = alive && dead > 0 && nowMs < dead + C.PROTECT_MS;
+      v.protect = alive && (v.away || (dead > 0 && nowMs < dead + C.PROTECT_MS));
       if (v.shown && !v.gone && this.sub === 'play' && score > leadScore) {
         leadScore = score;
         lead = idx;

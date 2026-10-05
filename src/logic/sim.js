@@ -62,6 +62,7 @@ export class Sim {
       score: 0,
       deadUntil: 0,
       gone: false,
+      away: false,
       brain: entry.bot ? new BotBrain(mulberry32(hashSeed(seed, 'bot', idx))) : null,
       bucket: C.CLAIM_BURST,
       bucketAt: startMs,
@@ -80,9 +81,9 @@ export class Sim {
     return !h.gone && t >= h.deadUntil;
   }
 
-  /** Just back from being swallowed: can't be swallowed again for a moment. */
+  /** Just back from being swallowed (can't be swallowed again for a moment), or away from the screen: the hole just stands there. */
   isProtected(h, t = this.t) {
-    return h.deadUntil > 0 && t < h.deadUntil + C.PROTECT_MS;
+    return h.away || (h.deadUntil > 0 && t < h.deadUntil + C.PROTECT_MS);
   }
 
   /** Steps the round forward to match time `now`, in fixed slices (a long stall is cut short, not replayed). */
@@ -232,6 +233,7 @@ export class Sim {
     const half = this.city.half;
     x = Math.max(-half, Math.min(half, x));
     z = Math.max(-half, Math.min(half, z));
+    if (x === h.x && z === h.z) return; // nothing new: the velocity guess waits for the next real update
     const dt = (t - h.posAt) / 1000;
     if (dt > 0.02 && dt < 1) {
       h.vx = (x - h.x) / dt;
@@ -248,6 +250,12 @@ export class Sim {
   setGone(id, gone) {
     const h = this.byId.get(id);
     if (h) h.gone = !!gone;
+  }
+
+  /** A player whose connection dropped keeps their hole and their points; it stands still and can't be swallowed meanwhile. */
+  setAway(id, away) {
+    const h = this.byId.get(id);
+    if (h) h.away = !!away;
   }
 
   /** Seats ordered by score, then mass, then seat. */

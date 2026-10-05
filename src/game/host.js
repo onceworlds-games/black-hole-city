@@ -229,6 +229,7 @@ export class HostController {
       if (h.bot) continue;
       const here = room.players.get(h.id);
       sim.setGone(h.id, !here);
+      sim.setAway(h.id, !!here && here.connected === false);
       if (!here) continue;
       if (h.id === room.me.id) {
         if (this.myPos) sim.setPos(h.id, this.myPos.x, this.myPos.z, sim.last);
