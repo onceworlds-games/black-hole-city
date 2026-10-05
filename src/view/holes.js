@@ -66,7 +66,7 @@ export class Holes {
   }
 
   /**
-   * views: [{ x, z, R, scale, alive, seat, me, protect }] in seat order. A hole that isn't alive is hidden and its slot
+   * views: [{ x, z, R, scale, shown, seat, me, protect }] in seat order. A hole that isn't shown is hidden and its slot
    * in the ground shader is switched off.
    */
   update(views, t) {
@@ -74,7 +74,7 @@ export class Holes {
     for (let i = 0; i < HOLE_SLOTS; i++) {
       const it = this.items[i];
       const v = views[i];
-      if (!v || !v.alive || !(v.R > 0.05) || !(v.scale > 0.02)) {
+      if (!v || !v.shown || !(v.R > 0.05) || !(v.scale > 0.02)) {
         it.root.visible = false;
         u[i].set(0, 0, 0);
         continue;

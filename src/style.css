@@ -1,0 +1,955 @@
+:root {
+  --accent: #19d3ff;
+  --gold: #ffc400;
+  --red: #ff4d4d;
+  --ink: #080c16;
+  --panel: rgba(8, 12, 22, 0.8);
+  --font: 'Archivo Black', 'Arial Black', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #0b1020;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+}
+
+#game {
+  z-index: 0;
+}
+
+#overlay {
+  z-index: 1;
+  pointer-events: none;
+}
+
+#ui {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  font-family: var(--font);
+  color: #fff;
+  text-transform: uppercase;
+  user-select: none;
+  -webkit-user-select: none;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  letter-spacing: 0.02em;
+}
+
+#ui .hit {
+  pointer-events: auto;
+}
+
+#ui [hidden] {
+  display: none !important;
+}
+
+.ink {
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55), 0 0 14px rgba(0, 0, 0, 0.5);
+  -webkit-text-stroke: 3px rgba(6, 9, 18, 0.7);
+  paint-order: stroke fill;
+}
+
+/* ------------------------------------------------------------------------------------------------ title */
+
+.title {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4vh;
+  background: radial-gradient(ellipse at 50% 48%, rgba(5, 8, 18, 0.62) 0%, rgba(5, 8, 18, 0.28) 55%, rgba(5, 8, 18, 0) 78%);
+}
+
+.logo {
+  text-align: center;
+  line-height: 0.88;
+  transform: skewX(-6deg);
+}
+
+.logo .l1 {
+  font-size: clamp(40px, 11vw, 132px);
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+
+.logo .l2 {
+  font-size: clamp(54px, 15vw, 188px);
+  letter-spacing: 0.02em;
+  color: var(--gold);
+  margin-top: 0.02em;
+}
+
+.logo .hole {
+  display: inline-block;
+  width: 0.86em;
+  height: 0.86em;
+  border-radius: 50%;
+  margin: 0 0.02em -0.08em;
+  background: radial-gradient(circle at 50% 50%, #000 0 52%, #04060d 62%, #1a2540 100%);
+  box-shadow: 0 0 0 0.065em var(--accent), 0 0 0.35em 0.07em rgba(25, 211, 255, 0.55), inset 0 0 0.25em 0.05em #000;
+  vertical-align: baseline;
+  -webkit-text-stroke: 0;
+}
+
+.play {
+  font: inherit;
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  background: var(--gold);
+  color: #0b1020;
+  min-width: clamp(220px, 30vw, 340px);
+  height: clamp(64px, 11vh, 92px);
+  font-size: clamp(30px, 5vh, 46px);
+  letter-spacing: 0.08em;
+  transform: skewX(-8deg);
+  box-shadow: 0 6px 0 #a67c00, 0 14px 30px rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.play span,
+.play kbd {
+  transform: skewX(8deg);
+}
+
+.play kbd {
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  border: 2px solid rgba(11, 16, 32, 0.55);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.play:hover,
+.play:focus-visible {
+  transform: skewX(-8deg) translateY(-2px);
+  box-shadow: 0 8px 0 #a67c00, 0 18px 34px rgba(0, 0, 0, 0.5);
+  outline: none;
+}
+
+.play:active {
+  transform: skewX(-8deg) translateY(4px);
+  box-shadow: 0 2px 0 #a67c00;
+}
+
+.coarse .play kbd {
+  display: none;
+}
+
+/* ------------------------------------------------------------------------------------------------ HUD */
+
+.clock {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 150px;
+  padding: 4px 18px 6px;
+  text-align: center;
+  background: var(--panel);
+  border-bottom: 3px solid var(--accent);
+}
+
+.clock.low {
+  border-bottom-color: var(--red);
+  animation: pulse 0.5s ease-in-out infinite alternate;
+}
+
+.clock .t {
+  display: block;
+  font-size: 40px;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+.clock.low .t {
+  color: #ff8080;
+}
+
+.clock .r {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+  margin-top: 1px;
+}
+
+.watching .clock {
+  top: 48px;
+}
+
+.side {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 214px;
+  background: var(--panel);
+  border-left: 3px solid var(--accent);
+}
+
+.watching .side {
+  top: 48px;
+}
+
+.me {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 6px 12px 4px;
+}
+
+.me .place {
+  font-size: 34px;
+  line-height: 1;
+  color: #fff;
+}
+
+.me .place.first {
+  color: var(--gold);
+}
+
+.me .score {
+  font-size: 22px;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.rows {
+  padding: 0 8px 8px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 27px;
+  padding: 0 6px;
+  font-size: 13px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.row.mine {
+  background: rgba(25, 211, 255, 0.18);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.row .n {
+  width: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  text-align: right;
+}
+
+.row .nm {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row .sc {
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.av {
+  position: relative;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  color: #0b1020;
+  overflow: hidden;
+}
+
+.av img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #1a2238;
+}
+
+/* ------------------------------------------------------------------------------------------------ callouts */
+
+.stage {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 18%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.banner .l1 {
+  font-size: clamp(34px, 8vw, 84px);
+  line-height: 1;
+  transform: skewX(-6deg);
+}
+
+.banner .l2 {
+  font-size: clamp(16px, 3vw, 28px);
+  color: var(--accent);
+  letter-spacing: 0.12em;
+}
+
+.banner.show {
+  animation: bannerIn 2.6s ease-out forwards;
+}
+
+.callout {
+  font-size: clamp(26px, 6vw, 58px);
+  line-height: 1;
+  transform: skewX(-6deg);
+}
+
+.callout.good {
+  color: var(--gold);
+}
+
+.callout.bad {
+  color: var(--red);
+}
+
+.callout.show {
+  animation: calloutIn 1.5s ease-out forwards;
+}
+
+.dead {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 30%;
+  text-align: center;
+}
+
+.dead .l1 {
+  font-size: clamp(34px, 8vw, 80px);
+  color: var(--red);
+  line-height: 1;
+  transform: skewX(-6deg);
+}
+
+.dead .l2 {
+  font-size: clamp(22px, 4vw, 40px);
+  margin-top: 8px;
+}
+
+.count {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(120px, 34vh, 320px);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.count span {
+  display: block;
+  animation: countPop 0.9s ease-out forwards;
+}
+
+.count.go span {
+  color: var(--gold);
+  animation: goPop 0.8s ease-out forwards;
+}
+
+.feed {
+  position: absolute;
+  top: 86px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.watching .feed {
+  top: 124px;
+}
+
+.feed div {
+  font-size: 14px;
+  padding: 3px 12px;
+  background: var(--panel);
+  border-left: 3px solid var(--gold);
+  white-space: nowrap;
+  animation: feedIn 3.6s ease-out forwards;
+}
+
+.feed div b {
+  color: var(--gold);
+  font-weight: normal;
+  margin: 0 6px;
+}
+
+.feed div.mine {
+  border-left-color: var(--accent);
+}
+
+.watch {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  padding: 8px 18px;
+  font-size: 16px;
+  text-align: center;
+  background: var(--panel);
+  border-left: 3px solid var(--accent);
+  white-space: nowrap;
+}
+
+.watch small {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  margin-top: 2px;
+}
+
+/* ------------------------------------------------------------------------------------------------ lobby */
+
+.lobbybar {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: calc(100vw - 280px);
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: var(--panel);
+  border-bottom: 3px solid var(--accent);
+}
+
+.group .lab {
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+}
+
+.group .val {
+  font-size: 28px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.opts {
+  display: flex;
+  gap: 6px;
+}
+
+.opt {
+  font: inherit;
+  appearance: none;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  min-width: 54px;
+  height: 44px;
+  padding: 0 12px;
+  font-size: 20px;
+  cursor: pointer;
+  transform: skewX(-8deg);
+}
+
+.opt span {
+  display: inline-block;
+  transform: skewX(8deg);
+}
+
+.opt.on {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #0b1020;
+}
+
+.opt:hover {
+  border-color: #fff;
+}
+
+.opt:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.hint {
+  position: absolute;
+  top: 74px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: clamp(13px, 2.4vw, 18px);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------------------------------------ results */
+
+.card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -52%);
+  min-width: min(560px, 92vw);
+  background: var(--panel);
+  border-top: 3px solid var(--accent);
+  padding: 14px 18px 16px;
+}
+
+.card h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+  font-weight: normal;
+  text-align: center;
+}
+
+.standing {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 18px;
+}
+
+.standing.mine {
+  background: rgba(25, 211, 255, 0.2);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.standing .n {
+  width: 22px;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: right;
+}
+
+.standing .nm {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.standing .sc {
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.standing .pt {
+  width: 56px;
+  text-align: right;
+  color: var(--accent);
+  font-size: 15px;
+}
+
+.standing .av {
+  width: 26px;
+  height: 26px;
+  font-size: 13px;
+}
+
+.results {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: radial-gradient(ellipse at 50% 50%, rgba(5, 8, 18, 0.78) 0%, rgba(5, 8, 18, 0.55) 70%);
+  padding-bottom: 96px;
+}
+
+.results.card-over {
+  background: none;
+  justify-content: flex-start;
+  padding: 120px 0 96px;
+}
+
+.results h1 {
+  margin: 0;
+  font-size: clamp(26px, 5vh, 46px);
+  letter-spacing: 0.14em;
+  font-weight: normal;
+  color: var(--gold);
+  transform: skewX(-6deg);
+}
+
+.podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(8px, 2vw, 22px);
+}
+
+.pl {
+  width: clamp(92px, 20vw, 170px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.pl .big {
+  position: relative;
+  width: clamp(54px, 11vh, 84px);
+  height: clamp(54px, 11vh, 84px);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: clamp(22px, 5vh, 36px);
+  color: #0b1020;
+  overflow: hidden;
+  border: 4px solid var(--c, #fff);
+  background: var(--c, #fff);
+}
+
+.pl.first .big {
+  width: clamp(70px, 15vh, 112px);
+  height: clamp(70px, 15vh, 112px);
+}
+
+.pl .big img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #1a2238;
+}
+
+.pl .crown {
+  width: 34px;
+  height: 24px;
+  margin-bottom: -2px;
+}
+
+.pl .name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(14px, 2.6vh, 20px);
+}
+
+.pl .val {
+  font-size: clamp(18px, 3.4vh, 28px);
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.pl .plinth {
+  width: 100%;
+  display: grid;
+  place-items: center;
+  font-size: clamp(26px, 6vh, 46px);
+  background: var(--panel);
+  border-top: 4px solid var(--c, #fff);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.pl.first .plinth {
+  height: clamp(60px, 13vh, 100px);
+}
+.pl.second .plinth {
+  height: clamp(44px, 9vh, 70px);
+}
+.pl.third .plinth {
+  height: clamp(32px, 6vh, 48px);
+}
+
+.you {
+  font-size: clamp(18px, 3.4vh, 28px);
+  padding: 6px 16px;
+  background: var(--panel);
+  border-left: 3px solid var(--accent);
+}
+
+/* ------------------------------------------------------------------------------------------------ messages */
+
+.msg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: rgba(5, 8, 18, 0.82);
+  font-size: clamp(24px, 5vw, 44px);
+  pointer-events: auto;
+}
+
+.msg .play {
+  min-width: 200px;
+  height: 64px;
+  font-size: 28px;
+}
+
+/* ------------------------------------------------------------------------------------------------ small screens */
+
+@media (max-width: 760px), (max-height: 520px) {
+  .clock {
+    top: 6px;
+    min-width: 112px;
+    padding: 2px 12px 4px;
+  }
+  .clock .t {
+    font-size: 28px;
+  }
+  .clock .r {
+    font-size: 10px;
+  }
+  .side {
+    top: 6px;
+    right: 6px;
+    width: 156px;
+  }
+  .me {
+    padding: 4px 8px 2px;
+  }
+  .me .place {
+    font-size: 24px;
+  }
+  .me .score {
+    font-size: 16px;
+  }
+  .row {
+    height: 22px;
+    font-size: 11px;
+    gap: 5px;
+  }
+  .av {
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+  }
+  .watching .clock,
+  .watching .side {
+    top: 40px;
+  }
+  .lobbybar {
+    max-width: calc(100vw - 20px);
+    gap: 6px;
+    top: 6px;
+  }
+  .group {
+    padding: 4px 8px;
+  }
+  .group .val {
+    font-size: 22px;
+  }
+  .opt {
+    min-width: 44px;
+    height: 44px;
+    font-size: 17px;
+    padding: 0 8px;
+  }
+  .hint {
+    top: 64px;
+  }
+  .feed {
+    top: 64px;
+  }
+  .stage {
+    top: 14%;
+  }
+}
+
+@media (max-height: 420px) {
+  .row:nth-child(n + 4) {
+    display: none;
+  }
+  .results {
+    gap: 6px;
+    padding-bottom: 70px;
+  }
+  .card {
+    padding: 8px 12px 10px;
+  }
+  .standing {
+    height: 30px;
+    font-size: 15px;
+  }
+  .hint {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------------------------------------ motion */
+
+@keyframes pulse {
+  from {
+    transform: translateX(-50%) scale(1);
+  }
+  to {
+    transform: translateX(-50%) scale(1.07);
+  }
+}
+
+@keyframes bannerIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.92);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0) scale(1.04);
+  }
+  16% {
+    transform: scale(1);
+  }
+  78% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes calloutIn {
+  0% {
+    opacity: 0;
+    transform: skewX(-6deg) scale(0.7);
+  }
+  12% {
+    opacity: 1;
+    transform: skewX(-6deg) scale(1.12);
+  }
+  22% {
+    transform: skewX(-6deg) scale(1);
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: skewX(-6deg) translateY(-14px);
+  }
+}
+
+@keyframes countPop {
+  0% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+}
+
+@keyframes goPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+@keyframes feedIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  8% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.reduced .clock.low {
+  animation: none;
+}
+
+.reduced .banner.show,
+.reduced .callout.show,
+.reduced .count span,
+.reduced .count.go span,
+.reduced .feed div {
+  animation-name: fadeOnly;
+}
+
+@keyframes fadeOnly {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

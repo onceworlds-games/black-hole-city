@@ -176,6 +176,15 @@ export class Session {
     return Math.max(0, g.until - this.room.matchNow());
   }
 
+  /** My score as I see it: the host's number plus what I've swallowed that the host hasn't counted yet. */
+  get myScore() {
+    const v = this.views[this.seat];
+    if (!v || !this.me) return 0;
+    let pend = 0;
+    for (const q of this.me.pend.values()) pend += q.v;
+    return v.score + pend;
+  }
+
   /** Where I place right now (0 is first), or -1 when I'm not a player in a round. */
   get myPlace() {
     return this.seat >= 0 ? this.order.indexOf(this.seat) : -1;

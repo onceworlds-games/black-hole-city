@@ -304,8 +304,17 @@ function plots() {
   ];
 }
 
+/** A bus parked at the kerb of one side of a block, placed before the little things so they leave room for it. */
+function busStop(b, rng, cx, cz) {
+  const side = Math.floor(rng() * 4);
+  const [x, z] = sidePoint(cx, cz, side, range(rng, -4, 4), 11);
+  const [dx, dz] = SIDE_DIR[side];
+  b.add(T.bus, x, z, yawOf(dx, dz));
+}
+
 function fillLot(b, rng, blk) {
   const { cx, cz, kind } = blk;
+  if (kind === 'shop' || ((kind === 'plaza' || kind === 'office') && chance(rng, 0.6)) || (kind === 'apt' && chance(rng, 0.3))) busStop(b, rng, cx, cz);
   switch (kind) {
     case 'landmark':
       checker(b, cx, cz, 'paved', 'paved2', 4.25);
@@ -507,8 +516,6 @@ function furnish(b, rng, blk) {
       b.tryAdd(T.kiosk, cx + range(rng, -6, 6), cz + range(rng, -2.5, 2.5), 0, 0.7);
       for (let k = 0; k < 3; k++) b.tryAdd(T.crate, cx + range(rng, -LOT, LOT), cz + range(rng, -LOT, LOT), range(rng, 0, 3), 0.8);
       for (let k = 0; k < 7; k++) wanderer(b, rng, cx, cz, 8, 'person');
-      // a bus at the kerb of the busiest side
-      b.tryAdd(T.bus, cx + range(rng, -3, 3), cz + 11.4, Math.PI, 0.9);
       break;
     case 'stadium':
       for (let k = 0; k < 9; k++) b.tryAdd(variant('car', Math.floor(rng() * 5), 5), cx + range(rng, -LOT, LOT), cz + range(rng, -LOT, LOT), rng() < 0.5 ? 0 : Math.PI / 2, 0.9);

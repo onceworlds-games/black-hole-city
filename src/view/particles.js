@@ -196,6 +196,7 @@ export class RingPulses {
     it.mesh.position.set(x, 0.22, z);
     it.mesh.scale.set(r0, 1, r0);
     it.mesh.visible = true;
+    return it;
   }
 
   clear() {

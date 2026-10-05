@@ -1,0 +1,23 @@
+{
+  "slug": "black-hole-city",
+  "name": "Black Hole City",
+  "description": "Be the hole. Swallow the city and grow bigger than everyone else.",
+  "dir": "dist",
+  "productionBranch": "main",
+  "genre": "Action",
+  "icon": "store/icon.png",
+  "thumbnails": ["store/thumb-1.png", "store/thumb-2.png", "store/thumb-3.png"],
+  "badges": [
+    { "id": "skyscraper", "name": "Skyscraper", "description": "Swallow a skyscraper.", "icon": "store/badge-skyscraper.png" },
+    { "id": "predator", "name": "Predator", "description": "Swallow another player.", "icon": "store/badge-predator.png" },
+    { "id": "whole-city", "name": "Whole City", "description": "Swallow 500 objects in one round.", "icon": "store/badge-whole-city.png" },
+    { "id": "first-win", "name": "First Win", "description": "Win a match.", "icon": "store/badge-first-win.png" }
+  ],
+  "controls": [
+    { "keys": ["W", "A", "S", "D"], "action": "Move" },
+    { "keys": ["Arrows"], "action": "Move" },
+    { "keys": ["Drag"], "action": "Steer with the mouse or a finger" },
+    { "keys": ["Space", "Enter"], "action": "Play on the title" },
+    { "keys": ["Tap"], "action": "Watching: next hole" }
+  ]
+}

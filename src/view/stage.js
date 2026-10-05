@@ -23,6 +23,7 @@ import { damp } from '../logic/rules.js';
 export const FOV = 38;
 export const PITCH = (55 * Math.PI) / 180;
 const TAN = Math.tan((FOV * Math.PI) / 360);
+export const TAN_HALF = TAN;
 
 const MOODS = {
   day: { bg: 0x9fcbee, sun: 0xfff0d2, sunI: 2.9, dir: [-0.55, 1, 0.45], sky: 0xc4ddff, ground: 0x6f7b5b, hemiI: 1.15, exposure: 1.0 },
@@ -73,6 +74,7 @@ export class Stage {
     this.z = 0;
     this.dist = 14;
     this.trauma = 0;
+    this.pitch = PITCH;
     this.width = 1;
     this.height = 1;
     this.aspect = 16 / 9;
@@ -182,7 +184,7 @@ export class Stage {
       oy = (Math.sin(t * 31.9 + 0.4) + Math.sin(t * 19.3 + 2.9)) * 0.5 * a * d * 0.014;
       roll = Math.sin(t * 27.3 + 0.9) * a * 0.012;
     }
-    cam.position.set(this.x + ox, Math.sin(PITCH) * d + oy, this.z + Math.cos(PITCH) * d);
+    cam.position.set(this.x + ox, Math.sin(this.pitch) * d + oy, this.z + Math.cos(this.pitch) * d);
     cam.lookAt(this.x + ox, 0, this.z);
     if (roll) cam.rotateZ(roll);
     cam.updateMatrixWorld();

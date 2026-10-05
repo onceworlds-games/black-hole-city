@@ -115,6 +115,20 @@ export class BotBrain {
       return;
     }
     this.mode = 'eat';
+    // bigger holes are no place to go looking for food, even when they aren't close enough to run from yet
+    const bigger = [];
+    for (const o of sim.holes) {
+      if (o === h || !sim.isAlive(o, t)) continue;
+      const Ro = radiusFor(o.mass);
+      if (Ro >= R * 1.25) bigger.push(o, Ro);
+    }
+    const unsafe = (px, pz) => {
+      for (let i = 0; i < bigger.length; i += 2) {
+        const o = bigger[i];
+        if (Math.hypot(o.x - px, o.z - pz) < bigger[i + 1] + R * 0.5 + 5) return true;
+      }
+      return false;
+    };
 
     // 2. hunt a smaller hole that is close
     if (rng() < this.aggr * 0.6) {
@@ -161,6 +175,7 @@ export class BotBrain {
         if (o === h || !o.bot || o.brain === null || !o.brain.has) continue;
         if (Math.hypot(o.brain.tx - gx, o.brain.tz - gz) < 7) score *= 0.65;
       }
+      if (bigger.length && unsafe(gx, gz)) score *= 0.12;
       if (score > bestScore) {
         bestScore = score;
         bx = gx;
@@ -169,7 +184,7 @@ export class BotBrain {
       }
     }
     // keep the old target if it is still about as good
-    if (this.has && found) {
+    if (this.has && found && !unsafe(this.tx, this.tz)) {
       const old = bunch(sim, this.tx, this.tz, 0.9, R, h.x, h.z, null);
       if (old > 0) {
         const oldScore = (old / (Math.hypot(this.tx - h.x, this.tz - h.z) + 5)) * 1.2;
@@ -182,7 +197,7 @@ export class BotBrain {
       this.has = true;
       return;
     }
-    if (this.has && bunch(sim, this.tx, this.tz, 0.9, R, h.x, h.z, null) > 0) return;
+    if (this.has && !unsafe(this.tx, this.tz) && bunch(sim, this.tx, this.tz, 0.9, R, h.x, h.z, null) > 0) return;
     // nothing near: look across the whole city
     let farScore = 0;
     for (let i = 0; i < samples; i++) {
@@ -190,7 +205,8 @@ export class BotBrain {
       const pz = (rng() * 2 - 1) * (sim.city.half - 3);
       const value = bunch(sim, px, pz, rho + 1, R, h.x, h.z, NEAR);
       if (value <= 0) continue;
-      const score = value / (Math.hypot(NEAR.x - h.x, NEAR.z - h.z) * 0.25 + 10);
+      let score = value / (Math.hypot(NEAR.x - h.x, NEAR.z - h.z) * 0.25 + 10);
+      if (bigger.length && unsafe(NEAR.x, NEAR.z)) score *= 0.12;
       if (score > farScore) {
         farScore = score;
         bx = NEAR.x;
