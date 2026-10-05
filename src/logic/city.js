@@ -4,7 +4,7 @@
 // Layout: 5 x 5 blocks of 20 units with 8 unit streets between them and a 4 unit street around the edge.
 // Houses and parks at the edges, apartments and towers inside, the stadium on one edge, the landmark in the middle.
 
-import { mulberry32, range, pick, chance, shuffled } from './rng.js';
+import { mulberry32, range, chance, shuffled } from './rng.js';
 import { T, TYPE_R, TYPE_VALUE, variant } from './objects.js';
 import { HALF, LOBBY_HALF } from './config.js';
 import { Grid } from './grid.js';

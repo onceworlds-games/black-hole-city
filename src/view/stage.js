@@ -26,7 +26,7 @@ const TAN = Math.tan((FOV * Math.PI) / 360);
 export const TAN_HALF = TAN;
 
 const MOODS = {
-  day: { bg: 0x9fcbee, sun: 0xfff0d2, sunI: 2.9, dir: [-0.55, 1, 0.45], sky: 0xc4ddff, ground: 0x6f7b5b, hemiI: 1.15, exposure: 1.0 },
+  day: { bg: 0x9fcbee, sun: 0xfff0d2, sunI: 2.9, dir: [-0.55, 1, 0.45], sky: 0xc4ddff, ground: 0x6f7b5b, hemiI: 1.15, exposure: 1.12 },
   sunset: { bg: 0xf29a68, sun: 0xff9c52, sunI: 2.7, dir: [-1.0, 0.5, 0.3], sky: 0xffb890, ground: 0x5a4a6e, hemiI: 0.95, exposure: 1.0 },
 };
 

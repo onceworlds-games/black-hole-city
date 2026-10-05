@@ -4,7 +4,7 @@ import { ShaderLib } from 'three';
 import { buildModels } from '../src/view/models.js';
 import { Stage, distanceFor, FOV, PITCH } from '../src/view/stage.js';
 import { makeGroundMaterial, makeHoleUniform, HOLE_SLOTS, buildGround } from '../src/view/ground.js';
-import { Particles, RingPulses } from '../src/view/particles.js';
+import { RingPulses } from '../src/view/particles.js';
 import { generateCity, generateLobby } from '../src/logic/city.js';
 import { TYPES, TYPE_COUNT } from '../src/logic/objects.js';
 import { buildScene, POSTER_SEED, SIZES } from '../src/poster.js';

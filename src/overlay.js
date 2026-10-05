@@ -128,7 +128,7 @@ export class Overlay {
       list.sort((a, b) => a.z - b.z);
       for (const v of list) this.drawTag(session, stage, v, scale);
     }
-    this.drawPops(stage, dt, scale, session);
+    this.drawPops(stage, dt, scale);
     this.drawConfetti(dt);
   }
 
@@ -272,7 +272,7 @@ export class Overlay {
     g.textAlign = 'left';
   }
 
-  drawPops(stage, dt, scale, session) {
+  drawPops(stage, dt, scale) {
     const g = this.g;
     const pt = this.pt;
     const reduced = this.reduced;
@@ -299,7 +299,6 @@ export class Overlay {
     }
     g.globalAlpha = 1;
     g.textAlign = 'left';
-    void session;
   }
 
   drawConfetti(dt) {

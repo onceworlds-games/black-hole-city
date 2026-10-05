@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeGame, startMatch, run, hostOf, gOf, frame } from './helpers/game.mjs';
+import { makeGame, startMatch, run, hostOf, gOf } from './helpers/game.mjs';
 import * as C from '../src/logic/config.js';
 import { radiusFor } from '../src/logic/rules.js';
 

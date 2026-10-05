@@ -390,7 +390,7 @@ export class Session {
       v.mass = h.mass;
       v.score = h.score;
       v.Rt = radiusFor(h.mass);
-      this.settleView(v, dt, sim.isAlive(h, ms), false, ms);
+      this.settleView(v, dt, sim.isAlive(h, ms));
       if (h.score >= best && sim.isAlive(h, ms)) {
         best = h.score;
         this.followTarget(v, 1);
@@ -401,14 +401,12 @@ export class Session {
   }
 
   drainDemo(sim) {
-    const ctx = this.ctx;
     const { ids, by } = sim.drainAte();
     for (let k = 0; k < ids.length; k++) {
       const v = this.views[by[k]];
       if (v) this.emit('fall', { id: ids[k], hx: v.x, hz: v.z, seat: v.idx });
     }
     sim.drainKills();
-    void ctx;
   }
 
   /** The camera follows a view, with a little lead in the direction it's going. */
@@ -430,8 +428,7 @@ export class Session {
   }
 
   /** Smooths a view's radius and runs its appear and disappear animations. */
-  settleView(v, dt, alive, hasSeen, nowMs) {
-    void nowMs;
+  settleView(v, dt, alive) {
     if (!v.seen) {
       v.seen = true;
       v.R = v.Rt;
@@ -461,7 +458,6 @@ export class Session {
       v.scale = v.dying / 0.32;
       v.shown = v.dying > 0;
     }
-    void hasSeen;
   }
 
   // ---- lobby: the practice park
@@ -532,7 +528,7 @@ export class Session {
         v.vx = 0;
         v.vz = 0;
       }
-      this.settleView(v, dt, true, false, 0);
+      this.settleView(v, dt, true);
       k++;
       if (k >= C.MAX_PLAYERS) break;
     }
@@ -599,7 +595,7 @@ export class Session {
 
     const me = this.me;
     if (me) {
-      this.updateMyLife(nowMs, nowOw);
+      this.updateMyLife(nowMs);
       const canPlay = this.sub === 'play' && me.alive && room.running && this.playing;
       this.acc += dt;
       let steps = 0;
@@ -749,7 +745,7 @@ export class Session {
       if (e.bot) botK++;
       v.Rt = radiusFor(mass);
       const alive = !v.gone && nowMs >= dead;
-      this.settleView(v, dt, alive, false, nowMs);
+      this.settleView(v, dt, alive);
       v.protect = alive && (v.away || (dead > 0 && nowMs < dead + C.PROTECT_MS));
       if (v.shown && !v.gone && this.sub === 'play' && score > leadScore) {
         leadScore = score;
@@ -966,7 +962,7 @@ export class Session {
   }
 
   /** I was swallowed, or I'm back: the host's record says when. */
-  updateMyLife(nowMs, nowOw) {
+  updateMyLife(nowMs) {
     const me = this.me;
     const view = this.views[this.seat];
     if (!view) return;
@@ -993,7 +989,6 @@ export class Session {
       view.x = spot.x;
       view.z = spot.z;
     }
-    void nowOw;
   }
 
   /** The edge spot farthest from the other holes. */

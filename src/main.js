@@ -277,11 +277,9 @@ async function boot() {
 
   const controlsFor = () => {
     const s = state.session;
-    const r = state.room;
     if (s.mode === 'lobby') return 'stick';
     if (s.mode === 'countdown' && s.playing) return 'stick';
     if (s.mode === 'round' && s.playing && (s.sub === 'play' || s.sub === 'score')) return 'stick';
-    void r;
     return null;
   };
 

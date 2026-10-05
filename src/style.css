@@ -806,6 +806,30 @@ canvas {
   }
 }
 
+/* a phone held upright: the platform's buttons take the top left, so things move clear of them */
+@media (max-width: 520px) {
+  .clock {
+    left: 138px;
+    transform: none;
+    min-width: 90px;
+  }
+  .side {
+    top: 60px;
+    width: 148px;
+  }
+  .watching .side {
+    top: 94px;
+  }
+  .lobbytop {
+    left: 8px;
+    right: 8px;
+    top: 62px;
+  }
+  .feed {
+    top: 130px;
+  }
+}
+
 @media (max-width: 640px) {
   .group {
     gap: 6px;
@@ -844,10 +868,10 @@ canvas {
 
 @keyframes pulse {
   from {
-    transform: translateX(-50%) scale(1);
+    scale: 1;
   }
   to {
-    transform: translateX(-50%) scale(1.07);
+    scale: 1.07;
   }
 }
 
