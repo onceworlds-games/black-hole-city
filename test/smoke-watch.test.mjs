@@ -1,4 +1,4 @@
-// The page loaded in the middle of someone else's match: the first tap skips the title, the player watches, and a closed
+// The page loaded in the middle of someone else's match: the player watches at once, and a closed
 // room gives one message and one button that joins again.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -10,7 +10,7 @@ import { FakeAudioContext } from './helpers/fakeaudio.mjs';
 
 register('./helpers/loader.mjs', import.meta.url);
 
-test('a page that loads mid-match skips the title on the first tap and watches; a closed room offers a way back', async () => {
+test('a page that loads mid-match watches at once; a closed room offers a way back', async () => {
   const errors = [];
   const origError = console.error;
   console.error = (...a) => errors.push(a.map(String).join(' '));
@@ -24,7 +24,6 @@ test('a page that loads mid-match skips the title on the first tap and watches; 
   };
   const bob = addClient(hub, 'bob');
   const cat = addClient(hub, 'cat');
-  for (const c of [bob, cat]) c.session.start();
   bob.room.setReady(true);
   cat.room.setReady(true);
   hub.startCountdown();
@@ -81,13 +80,7 @@ test('a page that loads mid-match skips the title on the first tap and watches; 
   };
   const ui = dom.ids.ui;
   const visible = (cls) => ui.find(cls).some((n) => !n.hidden);
-  run(400);
-  assert.ok(visible('title'), 'the title shows');
-  assert.ok(!visible('watch'));
-  // the first tap anywhere starts it
-  dom.fire('pointerdown', { target: dom.ids.game, button: 0, pointerType: 'touch', clientX: 450, clientY: 200, pointerId: 1 });
-  run(600);
-  assert.ok(!visible('title'), 'the title is gone');
+  run(1000);
   assert.ok(visible('watch'), 'a Watching label');
   assert.ok(visible('clock'), 'the clock still runs for a watcher');
   assert.ok(!ui.find('me')[0] || ui.find('me')[0].hidden, 'no score of my own');

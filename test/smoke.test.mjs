@@ -10,7 +10,7 @@ import { FakeAudioContext } from './helpers/fakeaudio.mjs';
 
 register('./helpers/loader.mjs', import.meta.url);
 
-test('the whole page: title, play, lobby, countdown, a round, the podium, back to the lobby', async () => {
+test('the whole page: the lobby at once, the countdown, a round, the podium, back to the lobby', async () => {
   const errors = [];
   const origError = console.error;
   console.error = (...a) => errors.push(a.map(String).join(' '));
@@ -24,7 +24,6 @@ test('the whole page: title, play, lobby, countdown, a round, the podium, back t
   };
   const room = hub.join('ann', 'Ann');
   const bob = addClient(hub, 'bob');
-  bob.session.start();
   const saved = {};
   const awarded = [];
   const boards = [];
@@ -77,16 +76,13 @@ test('the whole page: title, play, lobby, countdown, a round, the podium, back t
   const visible = (cls) => ui.find(cls).some((n) => !n.hidden);
   const text = (cls) => ui.find(cls)[0]?.textContent ?? '';
 
-  // title
+  // the lobby, at once: no title and no Play
   run(500);
-  assert.ok(visible('title'), 'the title shows first');
-  assert.ok(!visible('lobbytop') && !visible('clock'));
-  assert.ok(ui.find('play').length >= 1, 'a Play button');
-  // Play (a click on the button)
-  ui.find('play')[0].dispatch('click');
-  run(300);
-  assert.ok(!visible('title'));
   assert.ok(visible('lobbytop'), 'the lobby shows its settings');
+  assert.ok(!visible('clock'));
+  dom.fire('pointerdown', { target: dom.ids.game, button: 0, pointerType: 'mouse', clientX: 450, clientY: 200, pointerId: 1 });
+  dom.fire('pointerup', { target: dom.ids.game, pointerType: 'mouse', clientX: 450, clientY: 200, pointerId: 1 });
+  assert.equal(ui.find('title').length + ui.find('standalone').filter((n) => !n.hidden).length, 0, 'nothing of ours to press');
   assert.equal(controlsLog[controlsLog.length - 1]?.stick, 'analog', 'touch controls are asked for in the lobby');
   assert.ok(ui.find('opt').length === 5, 'time and rounds options');
   // the host taps a setting
@@ -101,21 +97,15 @@ test('the whole page: title, play, lobby, countdown, a round, the podium, back t
   bob.room.setReady(true);
   hub.startCountdown();
   run(200);
-  assert.equal(text('count'), '3', 'a big 3');
-  run(1000);
-  assert.equal(text('count'), '2');
-  run(1000);
-  assert.equal(text('count'), '1');
-  run(1000);
-  run(100);
+  assert.equal(ui.find('count').length, 0, "the platform's numerals are the only ones");
+  assert.ok(visible('banner'), 'the goal, under the countdown');
+  assert.equal(ui.find('banner')[0].find('l1')[0].textContent, 'SWALLOW THE CITY');
+  run(3100);
   assert.equal(room.match.phase, 'playing');
-  assert.equal(text('count'), 'GO');
   assert.equal(controlsLog[controlsLog.length - 1]?.stick, 'analog');
   run(600);
   assert.ok(visible('clock') && visible('side'), 'the HUD is up');
   assert.match(text('t'), /^1:2\d$|^1:30$/, `the clock reads ${text('t')}`);
-  assert.ok(visible('banner'), 'the goal banner');
-  assert.equal(ui.find('banner')[0].find('l1')[0].textContent, 'SWALLOW THE CITY');
   assert.ok(ui.find('row').filter((n) => !n.hidden).length === 5, 'a leaderboard of five');
   assert.match(text('place'), /^\d(ST|ND|RD|TH)$/);
 

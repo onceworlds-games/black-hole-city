@@ -1,4 +1,4 @@
-// The screens made of HTML: title, the top HUD, the lobby's settings, the countdown, banners and callouts, the scoreboard
+// The screens made of HTML: the top HUD, the lobby's settings, banners and callouts, the scoreboard
 // between rounds and the podium at the end. Every piece of text from another player goes in with textContent.
 
 import { SEAT_COLORS, TIME_OPTIONS, ROUND_OPTIONS } from './logic/config.js';
@@ -34,14 +34,13 @@ const SETTINGS = [
 
 export class UI {
   /**
-   * deps: { session, room, ow, avatars, sound, onPlay }
+   * deps: { session, room, ow, avatars, sound }
    */
   constructor(root, deps) {
     Object.assign(this, deps);
     this.root = root;
     this.reduced = false;
-    this.lastCount = -99;
-    this.goFor = null;
+    this.lastCount = '';
     this.bannerRid = null;
     this.cardKey = '';
     this.resultsKey = '';
@@ -53,20 +52,6 @@ export class UI {
 
   build() {
     const root = this.root;
-    // title
-    this.title = el('div', 'title');
-    const logo = el('div', 'logo');
-    const l1 = el('div', 'l1 ink');
-    const hole = el('span', 'hole');
-    l1.append('BLACK H', hole, 'LE');
-    logo.append(l1, el('div', 'l2 ink', 'CITY'));
-    this.playBtn = el('button', 'play hit');
-    this.playBtn.type = 'button';
-    this.playBtn.setAttribute('aria-label', 'Play');
-    this.playBtn.append(el('span', '', 'PLAY'), el('kbd', '', 'SPACE'));
-    this.playBtn.addEventListener('click', () => this.onPlay());
-    this.title.append(logo, this.playBtn);
-
     // HUD
     this.clock = el('div', 'clock');
     this.clockT = el('span', 't ink', '0:00');
@@ -103,9 +88,6 @@ export class UI {
     this.deadL1 = el('div', 'l1 ink', 'SWALLOWED');
     this.deadL2 = el('div', 'l2 ink', '');
     this.dead.append(this.deadL1, this.deadL2);
-    this.count = el('div', 'count ink');
-    this.countN = el('span', '', '');
-    this.count.append(this.countN);
 
     // lobby
     this.lobby = el('div', 'lobbytop');
@@ -159,8 +141,8 @@ export class UI {
     this.msgBtn.type = 'button';
     this.msg.append(this.msgText, this.msgBtn);
 
-    root.append(this.title, this.clock, this.side, this.feedEl, this.stage, this.dead, this.count, this.lobby, this.card, this.results, this.watch, this.readyBtn, this.msg);
-    for (const n of [this.title, this.clock, this.side, this.dead, this.count, this.lobby, this.card, this.results, this.watch, this.readyBtn, this.msg]) n.hidden = true;
+    root.append(this.clock, this.side, this.feedEl, this.stage, this.dead, this.lobby, this.card, this.results, this.watch, this.readyBtn, this.msg);
+    for (const n of [this.clock, this.side, this.dead, this.lobby, this.card, this.results, this.watch, this.readyBtn, this.msg]) n.hidden = true;
     this.banner.hidden = true;
     this.callEl.hidden = true;
   }
@@ -242,16 +224,15 @@ export class UI {
     const room = this.room;
     const mode = s.mode;
     const sub = s.sub;
-    const title = mode === 'title';
     const lobby = mode === 'lobby';
     const countdown = mode === 'countdown';
     const round = mode === 'round';
     const spectating = (round || countdown) && room.spectating;
     this.root.classList.toggle('watching', spectating);
+    this.root.classList.toggle('counting', countdown);
     this.root.classList.toggle('coarse', !!this.ow.controls?.touch);
     this.root.classList.toggle('reduced', !!this.reduced);
 
-    show(this.title, title);
     show(this.lobby, lobby);
     show(this.readyBtn, lobby && this.ow.mode === 'standalone');
     if (lobby) this.updateLobby();
@@ -270,15 +251,17 @@ export class UI {
     show(this.dead, !!dead);
     if (dead) setText(this.deadL2, `BACK IN ${Math.max(1, Math.ceil((mine.dead - room.matchNow()) / 1000))}`);
 
-    // a new round's words
-    if (playPhase && g.rid && this.bannerRid !== g.rid) {
-      this.bannerRid = g.rid;
-      if (room.matchNow() - g.t0 < 3000) {
-        if (g.rounds > 1) this.showBanner(`ROUND ${g.n}`, 'BIGGEST HOLE WINS');
+    // a new round's words: round 1's under the platform's countdown, so play begins with nothing in the way; later rounds' as they begin
+    const rid = countdown ? s.ctx?.rid : playPhase ? g.rid : null;
+    if (rid && this.bannerRid !== rid) {
+      this.bannerRid = rid;
+      if (countdown || room.matchNow() - g.t0 < 3000) {
+        const rounds = countdown ? (room.settings?.rounds ?? 1) : g.rounds;
+        if (rounds > 1) this.showBanner(`ROUND ${countdown ? 1 : g.n}`, 'BIGGEST HOLE WINS');
         else this.showBanner('SWALLOW THE CITY', 'BIGGEST HOLE WINS');
       }
     }
-    if (!round && this.bannerRid) this.bannerRid = null;
+    if (!round && !countdown && this.bannerRid) this.bannerRid = null;
     if (!round && !countdown && !this.banner.hidden) this.banner.hidden = true;
 
     // watching
@@ -313,34 +296,21 @@ export class UI {
     }
   }
 
+  /** The beeps under the platform's 3-2-1 (it draws the numerals). */
   updateCount(countdown, round, sub) {
     const room = this.room;
     let text = '';
-    let go = false;
     if (countdown) {
       const left = room.match.startsAt - this.ow.now();
       const n = Math.ceil(left / 1000);
       if (left > 0 && n >= 1 && n <= 3) text = String(n);
     } else if (round && sub === 'play' && this.session.ctx?.n === 1) {
       const t = room.matchNow();
-      if (t >= 0 && t < 800) {
-        text = 'GO';
-        go = true;
-      }
+      if (t >= 0 && t < 800) text = 'go';
     }
-    const key = text;
-    if (key !== this.lastCount) {
-      this.lastCount = key;
-      if (text) {
-        setText(this.countN, text);
-        this.count.classList.toggle('go', go);
-        this.count.hidden = false;
-        const clone = this.countN.cloneNode(true);
-        this.countN.replaceWith(clone);
-        this.countN = clone;
-        this.sound.count(go ? 0 : Number(text));
-      } else this.count.hidden = true;
-    }
+    if (text === this.lastCount) return;
+    this.lastCount = text;
+    if (text) this.sound.count(text === 'go' ? 0 : Number(text));
   }
 
   updateHud() {

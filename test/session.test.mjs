@@ -2,13 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeGame, startMatch, run, hostOf, gOf, frame } from './helpers/game.mjs';
 
-test('a solo player plays a whole match: title, lobby, countdown, round, scores, final, back to the lobby', () => {
+test('a solo player plays a whole match: lobby, countdown, round, scores, final, back to the lobby', () => {
   const game = makeGame(['ann'], { settings: { time: 90, rounds: 1 } });
   const [ann] = game.clients;
-  assert.equal(ann.session.mode, 'title');
-  frame(game);
-  assert.equal(ann.session.mode, 'title');
-  ann.session.start();
   frame(game);
   assert.equal(ann.session.mode, 'lobby');
   assert.ok(ann.session.me, 'my hole is in the lobby');
@@ -112,7 +108,6 @@ test('a player who comes in late watches, and sees what is going on', () => {
   run(game, 20000);
   const cat = addClient(game.hub, 'cat');
   game.clients.push(cat);
-  cat.session.start();
   run(game, 1500);
   assert.ok(cat.room.spectating);
   assert.equal(cat.session.mode, 'round');

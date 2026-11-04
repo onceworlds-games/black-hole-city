@@ -18,9 +18,8 @@ export function addClient(hub, id) {
   return { id, room, session, events };
 }
 
-/** Everyone presses Play and readies; the host starts the countdown (the room would, in a public server). */
+/** Everyone readies; the host starts the countdown (the room would, in a public server). */
 export function startMatch(game) {
-  for (const c of game.clients) c.session.start();
   for (const c of game.clients) c.room.setReady(true);
   game.hub.startCountdown();
 }

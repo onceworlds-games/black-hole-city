@@ -1,11 +1,11 @@
-// The game as one page lives it: which world is on screen (title, lobby, a round), where every hole is, my own hole's
+// The game as one page lives it: which world is on screen (lobby, a round), where every hole is, my own hole's
 // movement and swallowing, what the host says, and the events the picture and sound react to.
 // No DOM and no three.js in here: the tests drive a whole match through it with a fake room.
 //
 // Authority (see host.js): my page moves my hole and decides what it swallows, claims the objects with the host, and shows
 // them falling at once. Score, size and who has what come from the host's record `g`; the eaten set from `e`.
 
-import { Sim, spawnPlan } from '../logic/sim.js';
+import { spawnPlan } from '../logic/sim.js';
 import { collectSwallows, radiusFor, speedFor, clampToWorld, canGulp, canEat, damp } from '../logic/rules.js';
 import { buildRoster, citySeed, roundKey, roundId, seatCount } from '../logic/match.js';
 import { decodeEaten } from '../logic/bits.js';
@@ -41,7 +41,6 @@ function makeView(idx) {
     me: false,
     away: false,
     gone: false,
-    ready: false,
     leader: false,
     score: 0,
     mass: 0,
@@ -64,8 +63,7 @@ export class Session {
     this.nowMs = now;
     this.listeners = new Map();
     this.host = new HostController(room);
-    this.started = false;
-    this.mode = 'title';
+    this.mode = 'lobby';
     this.ctx = null;
     this.g = null;
     this.sub = null;
@@ -165,11 +163,6 @@ export class Session {
     return out;
   }
 
-  /** Called by the title's Play button (or the first tap of a page that loaded mid-match). */
-  start() {
-    this.started = true;
-  }
-
   /** The time left in the round in ms (0 outside play). */
   get timeLeft() {
     const g = this.g;
@@ -199,14 +192,6 @@ export class Session {
     this.me = null;
     this.claimQueue.length = 0;
     this.emit('world', ctx);
-  }
-
-  makeTitle() {
-    const seed = hashSeed('title', Math.floor(this.nowMs() / 1000), Math.floor(Math.random() * 1e6));
-    const city = getCity(seed);
-    const roster = buildRoster([], seed);
-    const sim = new Sim(city, roster, { seed, startMs: 0 });
-    return { kind: 'title', city, grid: city.grid(), sim, roster, t0: this.nowMs(), eaten: sim.eaten, key: 0, rid: `title${seed}` };
   }
 
   makeLobby() {
@@ -243,19 +228,14 @@ export class Session {
   syncMode() {
     const room = this.room;
     const m = room.match;
-    let mode = 'title';
-    if (this.started) mode = m.phase === 'playing' ? 'round' : m.phase === 'starting' ? 'countdown' : 'lobby';
+    const mode = m.phase === 'playing' ? 'round' : m.phase === 'starting' ? 'countdown' : 'lobby';
     const changed = mode !== this.mode;
     this.mode = mode;
-    if (mode === 'title' || mode === 'lobby') {
+    if (mode === 'lobby') {
       this.g = null;
       this.sub = null;
       this.seat = -1;
       this.playing = false;
-    }
-    if (mode === 'title') {
-      if (!this.ctx || this.ctx.kind !== 'title' || this.nowMs() - this.ctx.t0 > 80000) this.setCtx(this.makeTitle());
-    } else if (mode === 'lobby') {
       if (!this.ctx || this.ctx.kind !== 'lobby') {
         this.setCtx(this.makeLobby());
         this.me = this.newLobbyMe();
@@ -337,9 +317,6 @@ export class Session {
     dt = Math.min(dt, 0.1);
     this.syncMode();
     switch (this.mode) {
-      case 'title':
-        this.updateTitle(dt);
-        break;
       case 'lobby':
         this.updateLobby(dt);
         break;
@@ -366,47 +343,6 @@ export class Session {
       this.finalFor = g.mid;
       this.emit('final', { g, names: this.namesNow(), seat: this.seat, playing: this.playing, eats: this.stats.eats, gulps: this.stats.gulps, skyscraper: this.stats.skyscraper });
     }
-  }
-
-  // ---- title: bots playing in a whole city while the logo shows
-  updateTitle(dt) {
-    const ctx = this.ctx;
-    const ms = this.nowMs() - ctx.t0;
-    ctx.sim.advanceTo(ms);
-    this.clock = ms / 1000;
-    const sim = ctx.sim;
-    this.roster = ctx.roster;
-    let best = 0;
-    for (const h of sim.holes) {
-      const v = this.viewFor(h.idx);
-      v.id = h.id;
-      v.name = ctx.roster[h.idx].name;
-      v.bot = true;
-      v.me = false;
-      v.x = h.x;
-      v.z = h.z;
-      v.vx = h.vx;
-      v.vz = h.vz;
-      v.mass = h.mass;
-      v.score = h.score;
-      v.Rt = radiusFor(h.mass);
-      this.settleView(v, dt, sim.isAlive(h, ms));
-      if (h.score >= best && sim.isAlive(h, ms)) {
-        best = h.score;
-        this.followTarget(v, 1);
-      }
-    }
-    this.views.length = sim.holes.length;
-    this.drainDemo(sim);
-  }
-
-  drainDemo(sim) {
-    const { ids, by } = sim.drainAte();
-    for (let k = 0; k < ids.length; k++) {
-      const v = this.views[by[k]];
-      if (v) this.emit('fall', { id: ids[k], hx: v.x, hz: v.z, seat: v.idx });
-    }
-    sim.drainKills();
   }
 
   /** The camera follows a view, with a little lead in the direction it's going. */
@@ -503,7 +439,6 @@ export class Session {
       v.name = p.name ?? '';
       v.bot = false;
       v.me = p.id === this.myId;
-      v.ready = !!p.ready;
       v.away = false;
       if (v.me) {
         v.x = me.x;
@@ -686,7 +621,6 @@ export class Session {
       v.name = e.bot ? e.name : (p?.name ?? '');
       v.gone = !e.bot && !p;
       v.away = !!p && p.connected === false;
-      v.ready = false;
       // size and score: the host's own numbers, or its record
       let mass;
       let score;

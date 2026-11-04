@@ -17,7 +17,6 @@
     { "keys": ["W", "A", "S", "D"], "action": "Move" },
     { "keys": ["Arrows"], "action": "Move" },
     { "keys": ["Drag"], "action": "Steer with the mouse or a finger" },
-    { "keys": ["Space", "Enter"], "action": "Play on the title" },
     { "keys": ["Tap"], "action": "Watching: next hole" }
   ]
 }

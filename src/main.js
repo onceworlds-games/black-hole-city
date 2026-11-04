@@ -76,7 +76,7 @@ async function boot() {
   canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
   const overlay = new Overlay(overlayCanvas, avatars);
 
-  const state = { session: null, room: null, hitstop: 0, needSnap: true, biggest: 1, controls: undefined, lobbyHidden: false, lastHide: 0 };
+  const state = { session: null, room: null, hitstop: 0, needSnap: true, biggest: 1, controls: undefined };
 
   const applySettings = () => {
     const pr = ow.settings?.pixelRatio?.(2) ?? Math.min(devicePixelRatio || 1, 2);
@@ -92,7 +92,7 @@ async function boot() {
   input.onTap = () => {
     if (state.room?.spectating && state.session.mode === 'round') state.session.nextSpectate();
   };
-  const ui = new UI(uiRoot, { session: null, room, ow, avatars, sound, onPlay: () => play() });
+  const ui = new UI(uiRoot, { session: null, room, ow, avatars, sound });
   applySettings();
   addEventListener('resize', applySettings);
   ow.settings?.on?.('change', applySettings);
@@ -111,13 +111,12 @@ async function boot() {
   const colorOf = (seat) => C.SEAT_COLORS[seat % C.SEAT_COLORS.length];
 
   // 3. the game, bound to a room (again after a rejoin)
-  function mount(r, started) {
+  function mount(r) {
     state.room = r;
     const session = new Session({ room: r, now: () => ow.now() });
     state.session = session;
     ui.session = session;
     ui.room = r;
-    if (started) session.start();
     wire(session, r);
     r.on('close', (reason) => {
       if (reason === 'moved' || reason === 'left') return;
@@ -126,7 +125,7 @@ async function boot() {
         try {
           session.destroy();
           const next = await ow.rooms.join(JOIN);
-          mount(next, true);
+          mount(next);
         } catch (err) {
           console.error(err);
           ui.showClosed('disconnected', () => location.reload());
@@ -243,37 +242,10 @@ async function boot() {
     });
   }
 
-  // 4. play
-  function play() {
-    const session = state.session;
-    if (session.started) return;
-    sound.start();
-    session.start();
-    try {
-      state.room.hideLobby(false);
-    } catch {}
-    state.lobbyHidden = false;
-  }
-  addEventListener('keydown', (e) => {
-    if (state.session.mode === 'title' && (e.code === 'Space' || e.code === 'Enter') && !e.repeat) {
-      e.preventDefault();
-      play();
-    } else if (state.session.started) sound.start();
-  });
-  addEventListener(
-    'pointerdown',
-    (e) => {
-      const s = state.session;
-      if (s.mode === 'title' && state.room.match.phase !== 'lobby' && !ui.isUi(e.target)) play(); // a page that loads mid-match: the first tap
-      else if (s.started) sound.start(); // a tap in the game is what lets iPhones play sound
-    },
-    { passive: true },
-  );
-  try {
-    room.hideLobby(true);
-    state.lobbyHidden = true;
-  } catch {}
-  mount(room, false);
+  // 4. play: a key or a tap in the game is what lets browsers play sound
+  addEventListener('keydown', () => sound.start());
+  addEventListener('pointerdown', () => sound.start(), { passive: true });
+  mount(room);
 
   const controlsFor = () => {
     const s = state.session;
@@ -309,15 +281,8 @@ async function boot() {
           ow.controls?.set?.(want ? { stick: 'analog' } : null);
         } catch {}
       }
-      // the Ready strip stays away while the title shows
-      if (session.mode === 'title' && now - state.lastHide > 1000) {
-        state.lastHide = now;
-        try {
-          room.hideLobby(true);
-        } catch {}
-      }
       // music: softer in menus, full while a round plays
-      sound.setLevel(session.started ? (session.mode === 'round' && session.sub === 'play' ? 'play' : 'menu') : 'off');
+      sound.setLevel(session.mode === 'round' && session.sub === 'play' ? 'play' : 'menu');
 
       const cam = session.cam;
       if (state.needSnap && session.ctx) {
@@ -333,7 +298,7 @@ async function boot() {
       stage.city.update(dt * slow, session.clock, session.views);
       stage.holes.update(session.views, now / 1000);
       stage.update(dt * slow, now / 1000);
-      overlay.draw(session, stage, dt, session.mode !== 'title');
+      overlay.draw(session, stage, dt);
       ui.update();
       stage.render();
     } catch (err) {

@@ -42,7 +42,6 @@ for (let seed = 1; seed <= 12; seed++) {
           } else if (r < 0.001 && spare < 3) {
             // a newcomer, who watches
             const c = addClient(game.hub, `n${spare++}`);
-            c.session.start();
             game.clients.push(c);
           }
         }

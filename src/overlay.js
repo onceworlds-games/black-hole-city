@@ -112,9 +112,8 @@ export class Overlay {
 
   /**
    * session: the game's view of itself; stage: for projecting world points; dt in seconds.
-   * `tags` false hides name tags (the title).
    */
-  draw(session, stage, dt, tags = true) {
+  draw(session, stage, dt) {
     const g = this.g;
     this.time += dt;
     g.setTransform(this.pr, 0, 0, this.pr, 0, 0);
@@ -122,14 +121,12 @@ export class Overlay {
     g.lineJoin = 'round';
     g.textBaseline = 'middle';
     const scale = clamp(Math.min(this.w, this.h * 1.6) / 900, 0.78, 1.25);
-    if (tags) {
-      // far holes first so the near ones sit on top
-      const list = this.list;
-      list.length = 0;
-      for (const v of session.views) if (v.shown) list.push(v);
-      list.sort((a, b) => a.z - b.z);
-      for (const v of list) this.drawTag(session, stage, v, scale);
-    }
+    // far holes first so the near ones sit on top
+    const list = this.list;
+    list.length = 0;
+    for (const v of session.views) if (v.shown) list.push(v);
+    list.sort((a, b) => a.z - b.z);
+    for (const v of list) this.drawTag(session, stage, v, scale);
     this.drawPops(stage, dt, scale);
     this.drawConfetti(dt);
   }
@@ -149,14 +146,9 @@ export class Overlay {
     const scoreText = lobby ? '' : fmt(v.score);
     g.font = `${size * 1.05}px ${FONT}`;
     const scoreW = scoreText ? g.measureText(scoreText).width : 0;
-    let readyW = 0;
-    if (lobby && v.ready) {
-      g.font = `${size * 0.8}px ${FONT}`;
-      readyW = g.measureText('READY').width + 22 * scale;
-    }
     const pad = 8 * scale;
     const gap = 7 * scale;
-    const w = pad + av + gap + nameW + (scoreW ? gap + scoreW : 0) + (readyW ? gap + readyW : 0) + pad;
+    const w = pad + av + gap + nameW + (scoreW ? gap + scoreW : 0) + pad;
     const h = av + 8 * scale;
     let x = pt.x - w / 2;
     let y = pt.y - h - 8 * scale;
@@ -203,22 +195,6 @@ export class Overlay {
       g.fillStyle = '#ffc400';
       g.fillText(scoreText, tx, y + h / 2 + 1);
       tx += scoreW + gap;
-    }
-    if (readyW) {
-      // a green check and READY
-      g.fillStyle = '#2ee66b';
-      const cx = tx + 6 * scale;
-      g.beginPath();
-      g.moveTo(cx - 5 * scale, y + h / 2);
-      g.lineTo(cx - 1.5 * scale, y + h / 2 + 4 * scale);
-      g.lineTo(cx + 6 * scale, y + h / 2 - 5 * scale);
-      g.lineTo(cx + 4.4 * scale, y + h / 2 - 6.6 * scale);
-      g.lineTo(cx - 1.5 * scale, y + h / 2 + 1 * scale);
-      g.lineTo(cx - 3.4 * scale, y + h / 2 - 1.6 * scale);
-      g.closePath();
-      g.fill();
-      g.font = `${size * 0.8}px ${FONT}`;
-      g.fillText('READY', tx + 16 * scale, y + h / 2 + 1);
     }
     if (v.away && !v.gone) {
       g.font = `${size * 0.7}px ${FONT}`;

@@ -7,7 +7,7 @@ import { FakeAudioContext } from './helpers/fakeaudio.mjs';
 
 register('./helpers/loader.mjs', import.meta.url);
 
-test('without the platform: the title, a Ready button, a countdown and a round, all from the stand-in SDK', async () => {
+test('without the platform: the lobby, a Ready button, a countdown and a round, all from the stand-in SDK', async () => {
   const errors = [];
   const origError = console.error;
   console.error = (...a) => errors.push(a.map(String).join(' '));
@@ -56,16 +56,11 @@ test('without the platform: the title, a Ready button, a countdown and a round, 
     return false;
   };
   run(300);
-  assert.ok(visible('title'));
-  ui.find('play')[0].dispatch('click');
-  run(300);
   assert.ok(visible('lobbytop'));
   const ready = ui.find('standalone')[0];
   assert.ok(ready && !ready.hidden, 'a Ready button where there is no platform strip');
   ready.dispatch('click');
-  run(100);
-  assert.ok(run(3500, () => ui.find('count')[0].textContent === 'GO'), 'a countdown, then GO');
-  run(800);
+  run(4500);
   assert.ok(visible('clock'), 'the round is on');
   run(15000);
   assert.ok(ui.find('row').some((r) => !r.hidden));
